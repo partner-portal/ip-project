@@ -1,0 +1,8 @@
+if(a>b)
+{
+  cout<<"not ok";
+}
+else
+{
+ cout<<"ok";
+}

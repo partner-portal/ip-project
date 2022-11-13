@@ -1,6 +1,0 @@
-http://aws9-sv00037:8130/synccockpit
-
-http://aws9-sv00037:8136/bw.mo-sync-cockpit_dashing.application/#!/SyncCockpit/get_synccockpit
-
-
--Command "Invoke-WebRequest -Uri 'http://aws9-sv00037:8133/sync-edrm-cockpit'"

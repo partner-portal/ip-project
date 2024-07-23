@@ -1,0 +1,24 @@
+[package]
+name = "pnc"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[lib]
+crate-type = ["rlib"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+overflow-checks = false
+
+[dependencies]
+cstr_core = { version = "0.2", features = [ "alloc" ] }
+cty = "0.2.1"
+
+[build-dependencies]
+cc = "1.0"
+pnc-header-paths = { path = "../pnc-header-paths" }
+regex = "1"
+file-lock = "2.1.10"
+

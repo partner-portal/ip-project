@@ -1,0 +1,27 @@
+From b0b0bfa7e44656243847580f30af91e81ee2bf7b Mon Sep 17 00:00:00 2001
+From: Aymeric PLOTON <aymeric.ploton@provenrun.com>
+Date: Wed, 7 Jun 2023 15:24:38 +0000
+Subject: [PATCH 4/6] Definition of interrupt values for world S and NS for
+ board ls 1043ardb
+
+---
+ services/spd/pncd/pncd.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/services/spd/pncd/pncd.mk b/services/spd/pncd/pncd.mk
+index 0f8eb2514..42270cda6 100644
+--- a/services/spd/pncd/pncd.mk
++++ b/services/spd/pncd/pncd.mk
+@@ -12,6 +12,9 @@ SPD_SOURCES		:=	services/spd/pncd/pncd_common.c		\
+ 
+ NEED_BL32		:=	yes
+ 
++SPD_PNCD_NS_IRQ		:=	123
++SPD_PNCD_S_IRQ		:=	14
++
+ # The following constants need to be defined:
+ #   - SPD_PNCD_NS_IRQ: IRQ number used to notify NS world when SMC_ACTION_FROM_S is received
+ #   - SPD_PNCD_S_IRQ: IRQ number used to notify S world when SMC_ACTION_FROM_NS is received
+-- 
+2.25.1
+

@@ -1,0 +1,25 @@
+From f8950d27fe27875bd3fece6483c5257d7a3023a3 Mon Sep 17 00:00:00 2001
+From: Aymeric PLOTON <aymeric.ploton@provenrun.com>
+Date: Thu, 20 Jul 2023 19:27:22 +0200
+Subject: [PATCH 4/5] Enables uart print for ATF
+
+---
+ plat/nxp/s32/s32_common.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/plat/nxp/s32/s32_common.mk b/plat/nxp/s32/s32_common.mk
+index e917f1bda..0d7e25c15 100644
+--- a/plat/nxp/s32/s32_common.mk
++++ b/plat/nxp/s32/s32_common.mk
+@@ -190,7 +190,7 @@ LOG_LEVEL		?= 50
+ # there is no hardware lock to prevent concurrent access to the device. For now,
+ # opt to suppress output (except for crash reporting). For debugging and other
+ # similarly safe contexts, output can be turned back on using this switch.
+-S32_USE_LINFLEX_IN_BL31	?= 0
++S32_USE_LINFLEX_IN_BL31	?= 1
+ $(eval $(call add_define_val,S32_USE_LINFLEX_IN_BL31,$(S32_USE_LINFLEX_IN_BL31)))
+ 
+ # Whether we're going to run a hypervisor (EL2) or jump straight into the
+-- 
+2.34.1
+

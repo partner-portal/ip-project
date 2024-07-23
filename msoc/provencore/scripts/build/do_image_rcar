@@ -1,0 +1,77 @@
+#!/bin/bash
+#
+# Copyright (c) 2018-2023, ProvenRun and/or its affiliates. All rights reserved.
+#
+# Original author: Benjamin Mouchard
+#
+
+. ${BASE_DIR}/scripts/build/common_utils.sh
+. ${BUILD_BASE}/kernel_limits.mk
+
+SINGLE_BINARY_IMAGE=0
+SECURE_BOOT=0
+
+# Check for mkimage
+if ! type srec_cat >/dev/null 2>&1; then
+    echo "Please add a path to 'srec_cat' to your PATH."
+    exit 1
+fi
+
+
+for i in "$@"
+do
+case ${i} in
+    --secure)
+    if [[ "x${CST_PATH}" = "x" ]]; then
+        echo "CST_PATH is missing" 1>&2
+        exit 1
+    fi
+    SECURE_BOOT=1
+    shift
+    ;;
+    --single)
+    SINGLE_BINARY_IMAGE=1
+    shift
+    ;;
+    *)
+    echo "${0}: unknown option ${i}" 1>&2
+    exit 1;
+    ;;
+esac
+done
+
+IMG_DIR=${BUILD_BASE}/images
+
+# Unsigned images
+provencore_srec=${IMG_DIR}/provencore.srec
+
+mkdir -p ${IMG_DIR}
+
+if [[ "${SINGLE_BINARY_IMAGE}" = "1" ]]; then
+    # provencore.bin should exist and is the 'concatenation' of
+    # kernel.bin and codes.bin
+    # provencore.bin is signed and loaded as one image.
+
+    srec_cat ${BUILD_BASE}/kernel.bin -binary -offset 0x44200000 -Execution_Start_Address 0x44200020 -o ${IMG_DIR}/kernel.srec
+    srec_cat ${BUILD_BASE}/codes.bin -binary -offset 0x44223000 -Execution_Start_Address 0x44223000 -o ${IMG_DIR}/codes.srec
+    srec_cat ${IMG_DIR}/kernel.srec build/images/codes.srec -o ${IMG_DIR}/provencore.srec
+
+else
+    # kernel.bin and codes.bin are signed and loaded as separate images
+
+    # Check kernel and codes respective versions.
+    KERNEL_VERSION=$(get_kernel_version ${BUILD_BASE}/kernel.bin)
+    CODES_VERSION=$(get_codes_version ${BUILD_BASE}/codes.bin)
+    if [ "${KERNEL_VERSION}" != "${CODES_VERSION}" ]; then
+        echo "Version mismatch"
+        exit 1
+    fi
+
+    srec_cat ${BUILD_BASE}/kernel.bin -binary -offset 0x44200000 -Execution_Start_Address 0x44200020 -o ${IMG_DIR}/kernel.srec
+    srec_cat ${BUILD_BASE}/codes.bin -binary -offset 0x44223000 -Execution_Start_Address 0x44223000 -o ${IMG_DIR}/codes.srec
+    srec_cat ${IMG_DIR}/kernel.srec build/images/codes.srec -o ${IMG_DIR}/provencore.srec
+
+
+fi
+
+echo "${provencore_srec} is ready"

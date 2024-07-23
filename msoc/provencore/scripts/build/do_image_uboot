@@ -1,0 +1,90 @@
+#!/bin/bash
+#
+# Copyright (c) 2018-2023, ProvenRun and/or its affiliates. All rights reserved.
+#
+# Original author: Hadrien Barral
+#
+
+set -eu
+set -o pipefail
+
+. ${BASE_DIR}/scripts/build/common_utils.sh
+. ${BUILD_BASE}/kernel_limits.mk
+
+SINGLE_BINARY_IMAGE=0
+
+# Check for mkimage
+if ! type mkimage >/dev/null 2>&1; then
+    echo "Please add a path to 'mkimage' to your PATH."
+    echo "If you don't have 'mkimage', you can find it in the 'u-boot-tools'"
+    echo "package of your distribution."
+    exit 1
+fi
+
+for i in "$@"
+do
+case ${i} in
+    --single)
+    SINGLE_BINARY_IMAGE=1
+    shift
+    ;;
+    *)
+    echo "${0}: unknown option ${i}" 1>&2
+    exit 1;
+    ;;
+esac
+done
+
+IMG_DIR=${BUILD_BASE}/images
+
+# Unsigned images
+provencore_img=${IMG_DIR}/provencore.img
+kernel_img=${IMG_DIR}/kernel.img
+codes_img=${IMG_DIR}/codes.img
+
+mkdir -p ${IMG_DIR}
+
+if [[ "${SINGLE_BINARY_IMAGE}" = "1" ]]; then
+    # provencore.bin should exist and is the 'concatenation' of
+    # kernel.bin and codes.bin
+    # provencore.bin is loaded as one image.
+
+    # Create provencore.img
+    mkimage -A arm -T kernel -C none \
+        -a ${KERNEL_LOAD_ADDR} \
+        -e ${KERNEL_START_ADDR} \
+        -n "ProvenCore" \
+        -d ${BUILD_BASE}/provencore.bin \
+        ${provencore_img}
+else
+    # kernel.bin and codes.bin are loaded as separate images
+
+    # Check kernel and codes respective versions.
+    KERNEL_VERSION=$(get_kernel_version ${BUILD_BASE}/kernel.bin)
+    CODES_VERSION=$(get_codes_version ${BUILD_BASE}/codes.bin)
+    if [ "${KERNEL_VERSION}" != "${CODES_VERSION}" ]; then
+        echo "Version mismatch"
+        exit 1
+    fi
+
+    # Create kernel.img
+    mkimage -A arm -T kernel -C none \
+        -a ${KERNEL_LOAD_ADDR} \
+        -e ${KERNEL_START_ADDR} \
+        -n "ProvenCore" \
+        -d ${BUILD_BASE}/kernel.bin \
+        ${kernel_img}
+
+    # Create codes.img
+    mkimage -A arm -T kernel -C none \
+        -a ${CODES_LOAD_ADDR} \
+        -e 0x1CEB00DA \
+        -n "ProvenCore applications" \
+        -d ${BUILD_BASE}/codes.bin \
+        ${codes_img}
+
+    truncate -s %512 ${kernel_img}
+    cat ${kernel_img} ${codes_img} > ${provencore_img}
+fi
+
+echo "${provencore_img} is ready"

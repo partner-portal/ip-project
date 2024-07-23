@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2017-2023, ProvenRun and/or its affiliates. All rights reserved.
+#
+
+-include $(MKFILE)
+
+print-%:
+	@echo '$($*)'
+#	@echo '$*=$($*)' # this will print VAR=value of var"

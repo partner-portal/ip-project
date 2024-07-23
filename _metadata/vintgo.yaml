@@ -1,0 +1,17 @@
+_vintgo_conf_version : 2.1.0
+
+choices: []
+
+profile:
+  based_on: []
+  variables: []
+  settings:
+    - os: Linux
+  options: []
+  build_requires: 
+    - yocto_sdk/1.0.0.0@vcore_pcu_hpc/release
+  requires: []
+  environment: []
+  remotes: []
+  generators:
+    - virtualenv

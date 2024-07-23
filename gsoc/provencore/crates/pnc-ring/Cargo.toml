@@ -1,0 +1,17 @@
+[package]
+name = "pnc-ring"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+crate-type = ["rlib"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+
+[dependencies]
+cstr_core = { version = "0.2", features = [ "alloc" ] }
+pnc = { path = "../../crates/pnc-rs" }
+
+[build-dependencies]

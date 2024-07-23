@@ -1,0 +1,200 @@
+{
+  "bitmap_granularity": 8,
+  "sizes": [
+    {
+      "description": "Kernel",
+      "expr": {
+        "kind": "const",
+        "val": 151552
+      }
+    },
+    {
+      "description": "Page allocator",
+      "expr": {
+        "kind": "mult",
+        "left": {
+          "kind": "minus",
+          "left": {
+            "kind": "const",
+            "val": 5632
+          },
+          "right": {
+            "kind": "symbol",
+            "name": "nr-dma-pages"
+          }
+        },
+        "right": {
+          "kind": "const",
+          "val": 4
+        }
+      }
+    },
+    {
+      "description": "Process descriptors",
+      "expr": {
+        "kind": "mult",
+        "left": {
+          "kind": "plus",
+          "left": {
+            "kind": "symbol",
+            "name": "nr-procs"
+          },
+          "right": {
+            "kind": "const",
+            "val": 3
+          }
+        },
+        "right": {
+          "kind": "plus",
+          "left": {
+            "kind": "plus",
+            "left": {
+              "kind": "const",
+              "val": 672
+            },
+            "right": {
+              "kind": "mult",
+              "left": {
+                "kind": "symbol",
+                "name": "nr-proc-shms"
+              },
+              "right": {
+                "kind": "const",
+                "val": 16
+              }
+            }
+          },
+          "right": {
+            "kind": "mult",
+            "left": {
+              "kind": "symbol",
+              "name": "nr-proc-auths"
+            },
+            "right": {
+              "kind": "const",
+              "val": 48
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "System processes",
+      "expr": {
+        "kind": "mult",
+        "left": {
+          "kind": "plus",
+          "left": {
+            "kind": "symbol",
+            "name": "nr-processes"
+          },
+          "right": {
+            "kind": "const",
+            "val": 3
+          }
+        },
+        "right": {
+          "kind": "plus",
+          "left": {
+            "kind": "plus",
+            "left": {
+              "kind": "const",
+              "val": 136
+            },
+            "right": {
+              "kind": "mult",
+              "left": {
+                "kind": "bitmap",
+                "length": {
+                  "kind": "plus",
+                  "left": {
+                    "kind": "symbol",
+                    "name": "nr-processes"
+                  },
+                  "right": {
+                    "kind": "const",
+                    "val": 3
+                  }
+                }
+              },
+              "right": {
+                "kind": "const",
+                "val": 3
+              }
+            }
+          },
+          "right": {
+            "kind": "bitmap",
+            "length": {
+              "kind": "plus",
+              "left": {
+                "kind": "symbol",
+                "name": "nr-devices"
+              },
+              "right": {
+                "kind": "symbol",
+                "name": "nr-rees"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "IRQ hooks",
+      "expr": {
+        "kind": "mult",
+        "left": {
+          "kind": "symbol",
+          "name": "nr-irq-hooks"
+        },
+        "right": {
+          "kind": "const",
+          "val": 72
+        }
+      }
+    },
+    {
+      "description": "Scheduler",
+      "expr": {
+        "kind": "mult",
+        "left": {
+          "kind": "symbol",
+          "name": "nr-sched-queues"
+        },
+        "right": {
+          "kind": "const",
+          "val": 16
+        }
+      }
+    },
+    {
+      "description": "Shared memory descriptors",
+      "expr": {
+        "kind": "mult",
+        "left": {
+          "kind": "symbol",
+          "name": "nr-shms"
+        },
+        "right": {
+          "kind": "const",
+          "val": 24
+        }
+      }
+    },
+    {
+      "description": "Dynamic regions",
+      "expr": {
+        "kind": "mult",
+        "left": {
+          "kind": "symbol",
+          "name": "nr-regions"
+        },
+        "right": {
+          "kind": "const",
+          "val": 32
+        }
+      }
+    }
+  ]
+}

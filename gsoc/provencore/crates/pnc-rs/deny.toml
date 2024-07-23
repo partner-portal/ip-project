@@ -1,0 +1,7 @@
+[licenses]
+default = "deny"
+copyleft = "deny"
+allow = [
+	"MIT"
+]
+private.ignore = true

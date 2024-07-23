@@ -1,0 +1,7 @@
+build provencore:
+-------------------------------
+1- activate vintgo by running the below command:
+   Workon vintgo
+2- run vintgo setup_prj : to download all the repo dependencies
+3- run vintgo activate 
+4- in provencore gsoc or msoc directory call the build.sh .

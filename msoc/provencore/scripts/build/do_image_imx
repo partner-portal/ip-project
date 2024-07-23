@@ -1,0 +1,165 @@
+#!/bin/bash
+#
+# Copyright (c) 2018-2023, ProvenRun and/or its affiliates. All rights reserved.
+#
+# Original author: Hadrien Barral
+#
+
+set -eu
+set -o pipefail
+
+. ${BASE_DIR}/scripts/build/common_utils.sh
+. ${BUILD_BASE}/kernel_limits.mk
+
+SINGLE_BINARY_IMAGE=0
+SECURE_BOOT=0
+
+# Check for mkimage
+if ! type mkimage >/dev/null 2>&1; then
+    echo "Please add a path to 'mkimage' to your PATH."
+    echo "If you don't have 'mkimage', you can find it in the 'u-boot-tools'"
+    echo "package of your distribution."
+    exit 1
+fi
+
+# $1: Path to directory where the image is located
+# $2: Path to the mksigned script
+# $3: HAB version
+# $4: name of the image to sign
+# $5: load address
+function do_sign {
+    cp $1/$4 $2/$4
+    pushd $2
+    ./mksigned --hab-ver $3 $4 $5
+    rm -f $4
+    mv $4-signed $1
+    popd
+}
+
+##
+# Outputs the value of the makefile variable ${make_variable} defined in
+# the makefile ${make_file}.
+#
+# $1: make_variable
+# $2: make_file
+##
+function get_mk_var {
+    local make_variable="${1}"
+    local make_file="${2}"
+    MKFILE="${make_file}" make -s --no-print-directory \
+        -f "$BASE_DIR/scripts/Makefile.print" print-${make_variable}
+}
+
+
+for i in "$@"
+do
+case ${i} in
+    --secure)
+    if [[ "x${CST_PATH:=}" = "x" ]]; then
+        echo "You have requested secure-boot signing. CST_PATH is required." 1>&2
+        exit 1
+    fi
+    SECURE_BOOT=1
+    shift
+    ;;
+    --single)
+    SINGLE_BINARY_IMAGE=1
+    shift
+    ;;
+    *)
+    echo "${0}: unknown option ${i}" 1>&2
+    exit 1;
+    ;;
+esac
+done
+
+if [[ "${SECURE_BOOT}" = "1" ]]; then
+    if [ -z ${HAB_VERSION+x} ]; then
+        echo "HAB_VERSION must be set when calling this script";
+        echo " (e.g.: for the obsolete 'sabre_lite' board, it used to be '41')";
+        exit 1
+    fi
+fi
+
+PLAT=$(get_mk_var PLAT Makefile)
+IMG_DIR=${BUILD_BASE}/images
+MKSIGNED_PATH=${BASE_DIR}/tools/plat/${PLAT}/mksigned
+
+# Unsigned images
+provencore_img=${IMG_DIR}/provencore.img
+kernel_img=${IMG_DIR}/kernel.img
+codes_img=${IMG_DIR}/codes.img
+
+mkdir -p ${IMG_DIR}
+
+if [[ "${SINGLE_BINARY_IMAGE}" = "1" ]]; then
+    # provencore.bin should exist and is the 'concatenation' of
+    # kernel.bin and codes.bin
+    # provencore.bin is signed and loaded as one image.
+
+    # Create provencore.img
+    mkimage -A arm -T kernel -C none \
+        -a ${KERNEL_LOAD_ADDR} \
+        -e ${KERNEL_START_ADDR} \
+        -n "ProvenCore" \
+        -d ${BUILD_BASE}/provencore.bin \
+        ${provencore_img}
+
+    if [[ "${SECURE_BOOT}" = "1" ]]; then
+        # Sign provencore.img, creating provencore.img-signed
+        do_sign ${IMG_DIR} ${MKSIGNED_PATH} ${HAB_VERSION} provencore.img ${KERNEL_LOAD_ADDR}
+        provencore_img=${provencore_img}-signed
+    fi
+else
+    # kernel.bin and codes.bin are signed and loaded as separate images
+
+    # Check kernel and codes respective versions.
+    KERNEL_VERSION=$(get_kernel_version ${BUILD_BASE}/kernel.bin)
+    CODES_VERSION=$(get_codes_version ${BUILD_BASE}/codes.bin)
+    if [ "${KERNEL_VERSION}" != "${CODES_VERSION}" ]; then
+        echo "Version mismatch"
+        exit 1
+    fi
+
+    # Create kernel.img
+    mkimage -A arm -T kernel -C none \
+        -a ${KERNEL_LOAD_ADDR} \
+        -e ${KERNEL_START_ADDR} \
+        -n "ProvenCore" \
+        -d ${BUILD_BASE}/kernel.bin \
+        ${kernel_img}
+
+    # Create codes.img
+    mkimage -A arm -T kernel -C none \
+        -a ${CODES_LOAD_ADDR} \
+        -e 0x1CEB00DA \
+        -n "ProvenCore applications" \
+        -d ${BUILD_BASE}/codes.bin \
+        ${codes_img}
+
+    if [[ "${SECURE_BOOT}" = "1" ]]; then
+        # Sign kernel.img and codes.img, creating kernel.img-signed,
+        # codes.img-signed
+        do_sign ${IMG_DIR} ${MKSIGNED_PATH} ${HAB_VERSION} codes.img ${KERNEL_LOAD_ADDR}
+        do_sign ${IMG_DIR} ${MKSIGNED_PATH} ${HAB_VERSION} kernel.img ${KERNEL_LOAD_ADDR}
+
+        ALIGN_SIZE="0x1000"
+        IVT_SIZE="0x20"
+        CSF_PAD_SIZE="0x2000"
+        IMG_SIZE=$(ls -l ${kernel_img} | awk '{print $5}')
+        ALIGNED_SIZE=$(((${IMG_SIZE} + ${ALIGN_SIZE} - 1) & ~(${ALIGN_SIZE} - 1)))
+        FULL_SIZE=$((${ALIGNED_SIZE} + ${IVT_SIZE} + ${CSF_PAD_SIZE}))
+
+        cp ${kernel_img}-signed ${kernel_img}-signed-extended
+        truncate -s ${FULL_SIZE} ${kernel_img}-signed-extended
+
+        kernel_img=${kernel_img}-signed-extended
+        codes_img=${codes_img}-signed
+        provencore_img=${provencore_img}-signed
+    fi
+
+    truncate -s %512 ${kernel_img}
+    cat ${kernel_img} ${codes_img} > ${provencore_img}
+fi
+
+echo "${provencore_img} is ready"

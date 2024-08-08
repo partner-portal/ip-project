@@ -1,5 +1,0 @@
-[licenses]
-default = "deny"
-copyleft = "deny"
-allow = ["BSD-3-Clause", "MIT", "Apache-2.0"]
-private.ignore = true

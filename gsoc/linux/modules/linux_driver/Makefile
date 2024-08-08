@@ -1,2 +1,0 @@
-obj-$(CONFIG_PROVENCORE_REE) += ree/
-obj-$(CONFIG_PROVENCORE_SHARED_DEVICES) += shdev/
